@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 from .forms import SignInForm, SignUpForm
 from .jwt import create_token
 from .models import Room, RoomCell
+from .reset_cache import reset_rooms_cache
 
 
 def create_room(name, user, width):
