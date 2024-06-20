@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="background: white">
+<div id="map" style="width: 1000px; position: relative">
+
+</div>
+</div>
+{% endblock %}
+{% block import %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+        crossorigin="anonymous"></script>
+<script>
+    const room_pk = "{{room.pk}}";
+    const request_id = new Date().getTime();
+    const token = '';
+    console.log(room_pk);
+    console.log(request_id);
+    console.log("request", '{{request}}');
+    const drawSocket = new WebSocket("ws://" + window.location.host + "/ws/room/?token=" + localStorage.getItem('Token'));
+
+    const mapElement = document.getElementById("map");
+
+    drawSocket.onopen = function() {
+        drawSocket.send(
+            JSON.stringify({
+                pk: room_pk,
+                action: "join_room",
+                request_id: request_id,
+            })
+        );
+        console.log("joined room {{room.pk}}");
+        drawSocket.send(
+            JSON.stringify({
+                pk: room_pk,
+                action: "retrieve",
+                request_id: request_id,
+            })
+        );
+        console.log("retrieved room {{room.pk}}");
+        drawSocket.send(
+            JSON.stringify({
+                pk: room_pk,
+                action: "subscribe_to_room",
+                request_id: request_id
+            })
+        );
+        console.log("subscribed to room {{room.pk}}");
+        drawSocket.send(
+            JSON.stringify({
+                pk: room_pk,
+                action: "subscribe_instance",
+                request_id: request_id
+            })
+        );
+    };
+
+    function makeCellId(number){
+        return "cell" + buttonIdDivider + number;
+    }
+
+    function makeRgbFromRGB(r, g, b){
+        return "rgb(" + r + ", " + g + ", " + b + ")"
+    }
+
+    const mapWidth = mapElement.clientWidth;
+    const buttonIdDivider = "-^-";
+
+    drawSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        switch (data.action) {
+            case "retrieve":
+                console.log(data.data);
+                const colorMapVector = data.data.color_map;
+                const rowLength = Math.floor(Math.sqrt(colorMapVector.length));
+                const buttonWidthPx = mapWidth / rowLength;
+                const buttonWidthStyle = buttonWidthPx + "px";
+                for (let i=0; i<colorMapVector.length; i++) {
+                    let cellInfo = colorMapVector[i];
+                    const row = Math.floor(i / rowLength);
+                    const col = i % rowLength;
+                    const cellId = makeCellId(cellInfo[3]);
+                    const tryFindCell = document.getElementById(cellId);
+                    let cell;
+                    if (tryFindCell) {
+                        cell = tryFindCell;
+                    } else {
+                        cell = document.createElement('a');
+                        mapElement.appendChild(cell);
+                        cell.style.width = buttonWidthStyle;
+                        cell.style.height = buttonWidthStyle;
+                        cell.style.position = "absolute";
+                        cell.style.left = buttonWidthPx * col + "px";
+                        cell.style.top = buttonWidthPx * row + "px";
+                        cell.id = cellId;
+                    }
+                    cell.style.background = makeRgbFromRGB(cellInfo[0], cellInfo[1], cellInfo[2]);
+                    cell.addEventListener("click", (e) => {
+                        let colorButton = e.target;
+                        let buttonNumber = colorButton.id.split(buttonIdDivider)[1];
+                        let jsonStringBody = JSON.stringify({
+                            number: buttonNumber,
+                            action: "set_pixel",
+                            r: Math.floor(Math.random() * 255),
+                            g: Math.floor(Math.random() * 255),
+                            b: Math.floor(Math.random() * 255),
+                            request_id: request_id
+                        });
+                        console.log(jsonStringBody);
+                        drawSocket.send(
+                           jsonStringBody
+                        );
+                    });
+                }
+                break;
+            case "create":
+                console.log(data.action, data.data);
+                break;
+            case "update":
+                if (room_pk == data.data.room) {
+                    let cellId = makeCellId(data.data.number);
+                    let cell = document.getElementById(cellId);
+                    if (cell) {
+                        cell.style.background = makeRgbFromRGB(data.data.r, data.data.g, data.data.b);
+                    } else {
+                        console.error("cell #" + data.data.number + " with id " + cellId + " wasn't found");
+                    }
+                }
+                break;
+            default:
+                console.log(data.action, data.data, "default");
+                break;
+        }
+    };
+
+    drawSocket.onclose = function(e) {
+        console.error("CONNECTION CLOSED UNEXPECTEDLY");
+    };
+
+
+</script>
+{% endblock %}

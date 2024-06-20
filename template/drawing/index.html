@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Join a room or create it!</h3>
+<form method="POST">
+    {% csrf_token %}
+    <input id="room-name-input" name="name" type="text" size="100" placeholder="new-room" required><br>
+    <input id="room-width-input" name="width" type="number" size="100" value="5" required><br>
+    <input id="room-create-submit" type="submit" value="Create"/>
+</form>
+<div>
+    <h5>Available rooms:</h5>
+    <ol id="parentOfDeleteForms">
+        {% for room in rooms %}
+        <li>
+            <a href="{% url 'drawing:room' room.pk %}">{{room.name}}</a>
+            {% if user.is_authenticated %}
+            {% if room.host == user.pk %}
+            <form method="POST">
+                <input type="hidden" name="room_pk" value="{{room.pk}}"/>
+                <button>Delete</button>
+                {% csrf_token %}
+            </form>
+            {% endif %}
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ol>
+</div>
+{% endblock %}
+{% block import %}
+<script>
+    const formsParent = document.getElementById("parentOfDeleteForms");
+    let forms = formsParent.querySelectorAll('form')
+    forms.forEach(form => {
+        form.addEventListener("submit", async(event) => {
+            event.preventDefault();
+            let formData = new FormData(form);
+            let room_pk = formData.get("room_pk");
+            try {
+                let delete_room_response = await fetch("/delete-room/" + room_pk + "/", {
+                    method: "POST",
+                    body: formData
+                });
+                if (delete_room_response.ok) {
+                    form.parentElement.remove();
+                    alert("Deleted room #" + room_pk);
+                }
+            }
+            catch (e) {
+                alert("Error when deleting room #" + room_pk + "! " + e.message);
+            }
+        });
+    });
+</script>
+{% endblock %}

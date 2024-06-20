@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+<form method="post" id="authForm">
+    {% csrf_token %}
+{{form}}
+    <button>Submit</button>
+</form>
+{% endblock %}
+{% block import %}
+<script>
+    const form = document.getElementById("authForm");
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+        try {
+            const response = await fetch("{{post_url}}", {
+                method: 'POST',
+                body: formData,
+            });
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem("Token", data.access_token);
+                window.location.href = "/";
+            }
+        }
+        catch (error) {
+            console.error(error.message);
+        }
+    });
+</script>
+{% endblock %}
