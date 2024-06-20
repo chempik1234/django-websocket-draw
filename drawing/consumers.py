@@ -1,5 +1,6 @@
 import json
 
+from django.core.cache import cache
 from djangochannelsrestframework.decorators import action
 
 from channels.db import database_sync_to_async
@@ -11,6 +12,7 @@ from djangochannelsrestframework import mixins
 from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 from djangochannelsrestframework.observer.generics import ObserverModelInstanceMixin
 
+from .reset_cache import reset_cache_cell, make_key_for_cell
 from .serializers import UserSerializer, RoomSerializer, RoomCellSerializer
 
 
@@ -112,7 +114,10 @@ class RoomConsumer(ObserverModelInstanceMixin, GenericAsyncAPIConsumer):
 
     @database_sync_to_async
     def get_cell(self, room_pk, number):
-        return RoomCell.objects.get(room__pk=room_pk, number=number)
+        cell = cache.get(make_key_for_cell(room_pk, number))
+        if cell is None:
+            cell = reset_cache_cell(room_pk, number)
+        return cell
 
     @database_sync_to_async
     def current_users(self, room: Room):

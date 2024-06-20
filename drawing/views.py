@@ -16,12 +16,6 @@ from .jwt import create_token
 from .models import Room, RoomCell
 
 
-def reset_rooms_cache():
-    all_rooms = Room.objects.all().values("pk", "name", "host")
-    cache.delete('rooms')
-    cache.set('rooms', all_rooms, 60 * 60)  # 1h
-
-
 def create_room(name, user, width):
     created_room = Room.objects.create(name=name, host=user)
     for number in range(width * width):
