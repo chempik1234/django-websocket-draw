@@ -1,4 +1,8 @@
 ## Django realtime drawing with websockets
+### Inspiration
+Basic consumers and settings were copied from here --> https://github.com/DJWOMS/websockets_dcrf_example
+
+Authentication views and everything related to drawing were made by me.
 ### What is this?
 This is a simple test project that I made to learn django websockets (`djangochannelsrestframework`)
 ### What's inside?
