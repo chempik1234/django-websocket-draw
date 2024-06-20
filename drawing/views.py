@@ -94,10 +94,10 @@ class SignUpView(APIView):
             return JsonResponse({"details": "Invalid form"}, status=HTTP_400_BAD_REQUEST)
 
 
-@login_required(login_url='drawing:sign_in')
+@login_required(login_url="/sign-in/")
 def logout_view(request):
     logout(request)
-    return HttpResponseRedirect('/')
+    return HttpResponseRedirect("drawing:index")
 
 
 class RoomDeleteView(APIView):
