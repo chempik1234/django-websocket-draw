@@ -1,0 +1,1 @@
+daphne realtime_drawing_django.asgi:application
